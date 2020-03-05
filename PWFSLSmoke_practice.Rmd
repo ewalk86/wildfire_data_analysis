@@ -23,10 +23,12 @@ jv_palette <- c("#330099","#CC0066","#FF6633",
 ```
 
 
+Code source: https://cran.r-project.org/web/packages/PWFSLSmoke/vignettes/PWFSLSmoke.html
+
 ```{r}
-dir.create('~/Data/Spatial', recursive=TRUE)
-setSpatialDataDir('~/Data/Spatial')
-installSpatialData()
+#dir.create('Input/Spatial', recursive=TRUE)
+setSpatialDataDir('Input/Spatial')
+#installSpatialData()
 ```
 
 A first example
