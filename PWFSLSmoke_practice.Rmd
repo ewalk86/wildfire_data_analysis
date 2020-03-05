@@ -1,0 +1,109 @@
+---
+title: "PWFSLSmoke practice"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r}
+library(MazamaSpatialUtils)
+library(PWFSLSmoke)
+library(tidyverse)
+library(readxl)
+library(naniar)
+library(lubridate)
+library(zoo)
+library(knitr)
+jv_palette <- c("#330099","#CC0066","#FF6633", 
+                 "#0099CC", "#FF9900","#CC6633",
+                  "#FF3366", "#33CC99", "#33999")
+```
+
+
+```{r}
+dir.create('~/Data/Spatial', recursive=TRUE)
+setSpatialDataDir('~/Data/Spatial')
+installSpatialData()
+```
+
+A first example
+
+Let’s say we are interested in the impact of smoke from the 2018 Camp Fire on the Sacramento area.
+
+We would begin by creating a camp_fire ws_monitor object that has all the monitors in California for the period of interest:
+
+```{r}
+camp_fire <- monitor_loadAnnual(2018) %>%
+  monitor_subset(stateCodes = 'CA') %>%
+  monitor_subset(tlim = c(20181108,20181123))
+```
+
+We can display these monitors (colored by maximum PM2.5 value) in an interactive map, zoom in and click on the monitor in downtown Sacramento to get it’s monitorID:
+
+```{r}
+monitor_leaflet(camp_fire)
+```
+
+We can use this monitorID to create a ws_monitor object for this single monitor and take a look at a timeseries plot:
+
+```{r}
+Sacramento <- camp_fire %>%
+  monitor_subset(monitorIDs = '060670010_01')
+
+monitor_timeseriesPlot(
+  Sacramento,
+  style='aqidots',
+  pch=16,
+  xlab="2018"
+)
+addAQIStackedBar()
+addAQILines()
+addAQILegend(cex=0.8)
+title("Sacramento Smoke")
+```
+
+Next, we can use this specific location to create a ws_monitor object containing all monitors within 50km of Sacramento:
+
+```{r}
+Sacramento_area <-
+  camp_fire %>%
+  monitor_subsetByDistance(
+    longitude = Sacramento$meta$longitude,
+    latitude = Sacramento$meta$latitude,
+    radius = 50
+  )
+
+monitor_leaflet(Sacramento_area)
+```
+
+We can display the hourly data for all the monitors and add day/night shading:
+
+```{r}
+monitor_timeseriesPlot(Sacramento_area, 
+                       style='gnats',
+                       shadedNight = TRUE)
+```
+
+We can average together all the monitors and create a local-time daily average for the Sacramento area:
+
+```{r}
+Sacramento_area %>%
+  monitor_collapse() %>%
+  monitor_dailyStatistic() %>%
+  monitor_extractData()
+```
+
+Alternatively, we can plot the daily averages:
+
+```{r}
+Sacramento_area %>%
+  monitor_collapse() %>%
+  monitor_dailyBarplot(labels_x_nudge = 0.5,
+                       labels_y_nudge = 15)
+```
+
+
+
